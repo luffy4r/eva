@@ -73,72 +73,49 @@
     </main>
 
     <script>
-        // ==========================================
-        // ⚠️ VARIABLES À REMPLACER PAR TES CLÉS SAAS
-        // ==========================================
-        const SUPABASE_URL = "https://[TON_URL].supabase.co"; 
-        const SUPABASE_ANON_KEY = "ey...[TA_CLE_PUBLIQUE_ANON]";
+    document.getElementById('orderForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
         
-        // Les clés générées depuis ton application mobile
-        const API_KEY_CLIENT = "sk_live_...[TA_CLE_API_SAAS]"; 
-        const PRODUIT_ID = "[ID_DU_TABLIER_DANS_TA_BASE]"; 
-        // ==========================================
+        const btn = document.getElementById('submitBtn');
+        const statusDiv = document.getElementById('statusMessage');
+        
+        btn.innerHTML = "Envoi en cours...";
+        btn.disabled = true;
+        btn.classList.add('opacity-75');
+        statusDiv.classList.add('hidden');
 
-        document.getElementById('orderForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const btn = document.getElementById('submitBtn');
-            const statusDiv = document.getElementById('statusMessage');
-            
-            // État de chargement
-            btn.innerHTML = "Envoi en cours...";
-            btn.disabled = true;
-            btn.classList.add('opacity-75');
-            statusDiv.classList.add('hidden');
+        try {
+            // L'appel part vers TON nouveau server.js local
+            const response = await fetch('http://localhost:3000/api/commande', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nom: document.getElementById('nom').value,
+                    telephone: document.getElementById('telephone').value,
+                    wilaya: document.getElementById('wilaya').value,
+                    commune: document.getElementById('commune').value,
+                    quantite: parseInt(document.getElementById('quantite').value)
+                })
+            });
 
-            // Récupération des données du formulaire
-            const orderData = {
-                p_api_key: API_KEY_CLIENT,
-                p_produit_id: PRODUIT_ID,
-                p_nom_client: document.getElementById('nom').value,
-                p_telephone: document.getElementById('telephone').value,
-                p_wilaya: document.getElementById('wilaya').value,
-                p_commune: document.getElementById('commune').value,
-                p_quantite: parseInt(document.getElementById('quantite').value)
-            };
+            const data = await response.json();
 
-            try {
-                // Appel API REST vers Supabase
-                const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/creer_commande_site`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'apikey': SUPABASE_ANON_KEY
-                    },
-                    body: JSON.stringify(orderData)
-                });
-
-                if (response.ok) {
-                    // Succès !
-                    statusDiv.textContent = "Commande validée ! Vérifiez votre application.";
-                    statusDiv.className = "p-3 rounded-lg text-sm font-medium text-center bg-green-100 text-green-800 block";
-                    document.getElementById('orderForm').reset();
-                } else {
-                    // Erreur Supabase (ex: stock insuffisant, mauvaise clé)
-                    const error = await response.json();
-                    throw new Error(error.message || "Erreur lors de la commande");
-                }
-            } catch (error) {
-                // Affichage de l'erreur
-                statusDiv.textContent = "Erreur : " + error.message;
-                statusDiv.className = "p-3 rounded-lg text-sm font-medium text-center bg-red-100 text-red-800 block";
-            } finally {
-                // Restauration du bouton
-                btn.innerHTML = "Confirmer l'achat";
-                btn.disabled = false;
-                btn.classList.remove('opacity-75');
+            if (data.success) {
+                statusDiv.textContent = "Commande validée ! Vérifiez votre application.";
+                statusDiv.className = "p-3 rounded-lg text-sm font-medium text-center bg-green-100 text-green-800 block";
+                document.getElementById('orderForm').reset();
+            } else {
+                throw new Error(data.error);
             }
-        });
-    </script>
+        } catch (error) {
+            statusDiv.textContent = "Erreur : " + error.message;
+            statusDiv.className = "p-3 rounded-lg text-sm font-medium text-center bg-red-100 text-red-800 block";
+        } finally {
+            btn.innerHTML = "Confirmer l'achat";
+            btn.disabled = false;
+            btn.classList.remove('opacity-75');
+        }
+    });
+</script> 
 </body>
 </html>
